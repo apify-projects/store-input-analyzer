@@ -3,16 +3,19 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "startUrls": {
-            "title": "Start URLs",
+        "runIds": {
+            "title": "Run IDs",
             "type": "array",
-            "description": "URLs to start with.",
-            "editor": "requestListSources",
-            "prefill": [
-                {
-                    "url": "https://apify.com"
-                }
-            ]
+            "description": "Runs to start with.",
+            "editor": "stringList",
+            "prefill": ["IlwEbDd4iy2vPfvbw", "ZRT5Z0jDzM49zZAaG", "Kxed8O2MCLkbj4RMo"]
+        },
+        "fieldsOnlyCountPresent": {
+            "title": "Only count presence of these fields",
+            "type": "array",
+            "description": "Only count presence of these fields",
+            "editor": "stringList",
+            "prefill": ["startUrls"]
         }
     }
 }
