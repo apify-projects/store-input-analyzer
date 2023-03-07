@@ -7,7 +7,6 @@
 	"meta": {
 		"templateId": "ts-crawlee-cheerio"
 	},
-	"input": "./input_schema.json",
 	"readme": "./README.md",
 	"dockerfile": "./Dockerfile"
 }
