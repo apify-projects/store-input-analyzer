@@ -38,9 +38,12 @@ const crawler = new BasicCrawler({
     maxRequestRetries: 0,
     requestHandler: async ({ request }) => {
         const runId = request.uniqueKey;
-        const { defaultKeyValueStoreId } = (await client.run(runId).get())!;
-        const runInput = (await client.keyValueStore(defaultKeyValueStoreId).getRecord('INPUT'))!.value as Record<string, any>;
-        analyzeInputAndUpdateState(state, runInput, { fieldsOnlyCountPresent });
+        const run = await client.run(runId).get();
+        if (run) {
+            const { defaultKeyValueStoreId } = run;
+            const runInput = (await client.keyValueStore(defaultKeyValueStoreId).getRecord('INPUT'))!.value as Record<string, any>;
+            analyzeInputAndUpdateState(state, runInput, { fieldsOnlyCountPresent });
+        }
     },
 });
 
