@@ -1,4 +1,4 @@
-import type { State } from './main.js';
+import type { InnerState, State } from './main.js';
 
 interface AnalyzeInputOptions {
     fieldsOnlyCountPresent: string[],
@@ -17,43 +17,46 @@ const isPrimitive = (value: any) => typeof value !== 'object' || value === null;
 /**
  * The types are a bit messy since we allow recursive checks
  */
-export const analyzeInputAndUpdateState = (state: State, input: any, options: AnalyzeInputOptions) => {
+export const analyzeInputAndUpdateState = (state: State | InnerState, input: any, options: AnalyzeInputOptions) => {
     const { fieldsOnlyCountPresent } = options;
 
     // input is either a full input object or a primitive value from recursive iteration
     if (isPrimitive(input)) {
         state[`${input}`] ??= 0;
-        state[`${input}`]++;
+        (state[`${input}`] as number)++;
         return;
     }
 
     for (const [key, value] of Object.entries(input)) {
+        // We could have this already populated from other run inputs
+        state[key] ??= {
+            __total__: 0,
+            __used__: 0,
+            __empty__: 0,
+        } as InnerState;
+        const innerState = state[key] as InnerState;
+        innerState.__total__++;
+        if (isFieldEmpty(value)) {
+            innerState.__empty__++;
+        } else {
+            innerState.__used__++;
+        }
         if (fieldsOnlyCountPresent.includes(key)) {
-            state[key] ??= {
-                used: 0,
-                empty: 0,
-            };
-            if (isFieldEmpty(value)) {
-                state[key].empty++;
-            } else {
-                state[key].used++;
-            }
-        } else if (inNestedValue(value)) {
-            state[key] ??= {};
+            continue;
+        }
+        if (inNestedValue(value)) {
             if (Array.isArray(value)) {
                 for (const item of value) {
-                    analyzeInputAndUpdateState(state[key], item, options);
+                    analyzeInputAndUpdateState(innerState, item, options);
                 }
             } else {
                 // We can add recursive analysis later if needed
-                analyzeInputAndUpdateState(state[key], value, options);
-                state[key].count++;
+                analyzeInputAndUpdateState(innerState, value, options);
             }
         } else {
             // Normal primitive value we want to track values occurence
-            state[key] ??= {};
-            state[key][value as string] ??= 0;
-            state[key][value as string]++;
+            innerState[value as string] ??= 0;
+            (innerState[value as string] as number)++;
         }
     }
 };

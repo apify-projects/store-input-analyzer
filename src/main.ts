@@ -1,7 +1,8 @@
-import { Actor } from 'apify';
+import { Actor, log } from 'apify';
 import { BasicCrawler } from 'crawlee';
 
 import { analyzeInputAndUpdateState } from './analyzer.js';
+import { sortStateObject } from './utils.js';
 
 await Actor.init();
 
@@ -10,8 +11,15 @@ interface Input {
     fieldsOnlyCountPresent: string[],
 }
 
-// We have any there because we can do recursive iteration
-export type State = Record<string, any>;
+// We have to do this madness to workaround TS recursion limitation
+type StateValue = number | InnerState;
+
+export interface InnerState extends Record<string, StateValue> {
+    __total__: number,
+    __used__: number,
+    __empty__: number,
+}
+export type State = Record<string, InnerState>
 
 const {
     runIds = [],
@@ -40,17 +48,22 @@ const crawler = new BasicCrawler({
         const runId = request.uniqueKey;
         const run = await client.run(runId).get();
         if (run) {
+            log.info(`Processing run ${runId}`);
             const { defaultKeyValueStoreId } = run;
             const runInput = (await client.keyValueStore(defaultKeyValueStoreId).getRecord('INPUT'))!.value as Record<string, any>;
             analyzeInputAndUpdateState(state, runInput, { fieldsOnlyCountPresent });
+        } else {
+            log.warning(`Run ${runId} not found, perhaps it is after retention period?`);
         }
     },
 });
 
 await crawler.run(requests);
 
+sortStateObject(state);
+
 await Actor.setValue('OUTPUT', state);
-await Actor.pushData(state);
+await Actor.pushData(state as Record<string, any>);
 
 // Exit successfully
 await Actor.exit();
