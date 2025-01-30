@@ -9,6 +9,8 @@ await Actor.init();
 interface Input {
     runIds: string[],
     fieldsOnlyCountPresent: string[],
+    /** We slice it after sorting so we take top N records */
+    maxRecordsPerField?: number,
 }
 
 // We have to do this madness to workaround TS recursion limitation
@@ -24,6 +26,7 @@ export type State = Record<string, InnerState>
 const {
     runIds = [],
     fieldsOnlyCountPresent = [],
+    maxRecordsPerField = Infinity,
 }: Input = (await Actor.getInput())!;
 
 const client = Actor.newClient();
@@ -60,7 +63,7 @@ const crawler = new BasicCrawler({
 
 await crawler.run(requests);
 
-sortStateObject(state);
+sortStateObject(state, maxRecordsPerField);
 
 await Actor.setValue('OUTPUT', state);
 await Actor.pushData(state as Record<string, any>);

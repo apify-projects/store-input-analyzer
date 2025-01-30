@@ -16,6 +16,12 @@
             "description": "Only count presence of these fields",
             "editor": "stringList",
             "prefill": ["startUrls"]
+        },
+        "maxRecordsPerField": {
+            "title": "Max records per field",
+            "type": "integer",
+            "description": "The output item can get huge if all variants are present. This limits to the N most common records per field. By default, all records are included.",
+            "editor": "number"
         }
     }
 }

@@ -3,9 +3,10 @@ import type { InnerState, State } from './main.js';
 const DEFAULT_FIELDS = ['__total__', '__used__', '__empty__'];
 
 // We have the object as reference so we have to do it this ugly field replacement
-const getSortedObject = (obj: Record<string, number>) => {
-    const keysWithoutDefault = Object.keys(obj).filter((field) => !DEFAULT_FIELDS.includes(field));
+const getSortedObject = (obj: Record<string, number>, maxRecordsPerField: number) => {
+    let keysWithoutDefault = Object.keys(obj).filter((field) => !DEFAULT_FIELDS.includes(field));
     keysWithoutDefault.sort((a, b) => obj[b] - obj[a]);
+    keysWithoutDefault = keysWithoutDefault.slice(0, maxRecordsPerField);
 
     // Create holder object
     const sortedInnerStateFinal = {} as Record<string, number>;
@@ -24,7 +25,7 @@ const getSortedObject = (obj: Record<string, number>) => {
 
 // We need to pass parent and key to be able to replace the inner object with sorted one
 // Unfortunately, you cannot resort object with 'delete' keyword
-const sortInnerStateRecursively = (parent: State, key: string) => {
+const sortInnerStateRecursively = (parent: State, key: string, maxRecordsPerField: number) => {
     const innerState = parent[key];
     // Skip sorting empty object that only has the 3 default members
     const keysWithoutDefault = Object.keys(innerState).filter((field) => !DEFAULT_FIELDS.includes(field));
@@ -33,25 +34,25 @@ const sortInnerStateRecursively = (parent: State, key: string) => {
     }
 
     const isFinal = typeof innerState[keysWithoutDefault[0]] === 'number';
-    console.log(`first key: ${keysWithoutDefault[0]}, ${typeof innerState[keysWithoutDefault[0]]}`)
+    console.log(`first key: ${keysWithoutDefault[0]}, ${typeof innerState[keysWithoutDefault[0]]}`);
     if (isFinal) {
         // Now we know this is final state, TS is too stupid here
-        parent[key] = getSortedObject(innerState as Record<string, number>) as InnerState;
+        parent[key] = getSortedObject((innerState as Record<string, number>), maxRecordsPerField) as InnerState;
     } else {
         for (const innerKey of Object.keys(innerState)) {
             if (DEFAULT_FIELDS.includes(innerKey)) {
                 continue;
             }
-            sortInnerStateRecursively(innerState as State, innerKey);
+            sortInnerStateRecursively(innerState as State, innerKey, maxRecordsPerField);
         }
     }
 };
 /**
  * Sorts by numeric value
  */
-export const sortStateObject = (obj: State) => {
+export const sortStateObject = (obj: State, maxRecordsPerField: number) => {
     for (const key of Object.keys(obj)) {
-        console.log(`sroting key ${key}`);
-        sortInnerStateRecursively(obj, key);
+        console.log(`sorting key ${key}`);
+        sortInnerStateRecursively(obj, key, maxRecordsPerField);
     }
 };
